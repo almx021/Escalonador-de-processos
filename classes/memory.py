@@ -17,4 +17,7 @@ class Memory:
 
     @property
     def free_space(self):
-        return self.memory_size - self.memory_usage        
+        return self.memory_size - self.memory_usage   
+    
+    def free(self, space):
+        self.memory_usage -= space     

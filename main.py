@@ -82,22 +82,19 @@ class Scheduler:
                 
         print('lista de tempos', self.list_of_init_times)
         
-        while not self.list_of_init_times == []:
-           sleep(1)
-           self.counter += 1
+        while not self.list_of_init_times == [] or not all(x[2] == 'Finished' for x in self.processes.values()):
+            sleep(1)
+            self.counter += 1
+
+            self.check_schedule()
            
-           print('Contador:', self.counter, 'Tempos de criação restantes:', self.list_of_init_times)
-           if self.counter in self.list_of_init_times:
-               self._create_process(self.counter)
-               self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
-               self._schedule_process(self.processes[len(self.processes) - 1][0])
-               
-               print('\nprocessos', self.processes, '\n')
-               print(f"""Memória:
-                      Total - {self.memory.memory_size}
-                      Usada - {self.memory.memory_usage}
-                      Livre - {self.memory.free_space}
-                      Porcentagem de uso - {round(self.memory.free_space / self.memory.memory_size*100, 2)}%\n""")
+            print('Contador:', self.counter, 'Tempos de criação restantes:', self.list_of_init_times)
+            
+            if self.counter in self.list_of_init_times:
+                self._create_process(self.counter)
+                self._schedule_process(self.processes[len(self.processes) - 1][0])
+            
+            self.generate_memory_report()
     
     def _create_process(self, init_time):
         id = len(self.processes)
@@ -105,19 +102,52 @@ class Scheduler:
         size = random.randint(self.range_of_space[0], self.range_of_space[1])
             
         p = Process(id, init_time, duration, size)
-        self.processes[id] = (p, p.memory_usage, p.status)
+        self.processes[id] = [p, p.memory_usage, p.status, p.init_time, p.duration]
+        self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
 
     def _schedule_process(self, element:Process):
-        if not self.waiting_room.empty:
-            self.waiting_room.put(element)
+        if self.waiting_room.empty and self.memory.free_space > element.memory_usage:
+            self._allocate_process(element)
         else:
-            if self.memory.free_space > element.memory_usage:
-                self.memory.current_processes.append(element)
-                self.memory.memory_usage += element.memory_usage
+            self.waiting_room.put(element)
+
+    def _allocate_process(self, element:Process):
+            self.memory.current_processes.append(element)
+            self.memory.memory_usage += element.memory_usage
+            
+            element.allocation_time = self.counter
+            element.status = "Running"
+            self.processes[element.id][2] = element.status    
+            self.processes[element.id].append(element.allocation_time) 
+            
+            print('\nprocessos', self.processes)      
+            
+    def _desallocate_process(self, element:Process):
+        self.memory.current_processes.pop(self.memory.current_processes.index(element))
+        self.memory.free(element.memory_usage)
+
+        element.waiting_time = self.counter - element.init_time
+        element.status = "Finished"
+        self.processes[element.id][2] = element.status
                 
-        
+        print('\nprocessos', self.processes)
+
     def _pop_from_queue(self):
         self.waiting_room.get()
+
+    def check_schedule(self):
+        for process_info in self.processes.values():
+            process = process_info[0]
+            if self.counter - process.duration == process.allocation_time:
+                print(self.counter, process.duration, process.allocation_time)
+                self._desallocate_process(process)
+
+    def generate_memory_report(self):
+        print(f"""\nMemória:
+        Total - {self.memory.memory_size}
+        Usada - {self.memory.memory_usage}
+        Livre - {self.memory.free_space}
+        Porcentagem de uso - {round((self.memory.memory_usage / self.memory.memory_size)*100, 2)}%\n""")
 
 
 if __name__ == '__main__':
