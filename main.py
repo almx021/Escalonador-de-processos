@@ -69,52 +69,51 @@ class Scheduler:
         
         self.memory = Memory(memory_size, so_size)
         self.processes = dict()
-        self.intilization_times = list()
-        self.last_initialization_time = 0
+        self.list_of_init_times = list()
         self.waiting_room = queue.Queue(self.number_of_processes)
+        
+        self.counter = 0
         
     def main(self):
         for _ in range(self.number_of_processes):
-            self.intilization_times.append(random.randint(self.range_of_creation[0], self.range_of_creation[1]))
+            self.list_of_init_times.append(random.randint(self.range_of_creation[0], self.range_of_creation[1]))
             if _ > 0:
-                self.initilization_times[_] +=  self.initilization_times[_- 1]
+                self.list_of_init_times[_] +=  self.list_of_init_times[_- 1]
                 
-        counter = 0
-        print(self.intilization_times)
+        print('lista de tempos', self.list_of_init_times)
         
-        while True:
+        while not self.list_of_init_times == []:
            sleep(1)
-           counter += 1
+           self.counter += 1
            
-           print(counter)
-           
-           if counter in self.list_of_init_times:
-               print('oi')
-               self._create_process(counter)
-               self.list_of_init_times.pop(counter)
-               self._schedule_process(self, self.processes[len(self.processes) - 1])
+           print('Contador:', self.counter, 'Tempos de criação restantes:', self.list_of_init_times)
+           if self.counter in self.list_of_init_times:
+               self._create_process(self.counter)
+               self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
+               self._schedule_process(self.processes[len(self.processes) - 1][0])
                
-               print(processes) 
+               print('\nprocessos', self.processes, '\n')
+               print(f"""Memória:
+                      Total - {self.memory.memory_size}
+                      Usada - {self.memory.memory_usage}
+                      Livre - {self.memory.free_space}
+                      Porcentagem de uso - {round(self.memory.free_space / self.memory.memory_size*100, 2)}%\n""")
     
     def _create_process(self, init_time):
-        
-        for id in range(self.number_of_processes):
-            duration = random.randint(self.range_of_duration[0], self.range_of_duration[1])
-            size = random.randint(self.range_of_space[0], self.range_of_space[1])
+        id = len(self.processes)
+        duration = random.randint(self.range_of_duration[0], self.range_of_duration[1])
+        size = random.randint(self.range_of_space[0], self.range_of_space[1])
             
-            init_time += self.last_initialization_time
-            self.processes[id] = Process(init_time, duration, size)
+        p = Process(id, init_time, duration, size)
+        self.processes[id] = (p, p.memory_usage, p.status)
 
-            self.last_initialization_time = last_time
-            
-
-    def _schedule_process(self, element):
+    def _schedule_process(self, element:Process):
         if not self.waiting_room.empty:
             self.waiting_room.put(element)
         else:
             if self.memory.free_space > element.memory_usage:
                 self.memory.current_processes.append(element)
-                self.memory.free_space -= element.memory_usage
+                self.memory.memory_usage += element.memory_usage
                 
         
     def _pop_from_queue(self):

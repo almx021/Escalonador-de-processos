@@ -10,8 +10,11 @@ class Memory:
     def __init__(self, memory_size, so_size):
         if Memory.__instance is None:
             self.memory_size = memory_size
-            self.free_space = self.memory_size - so_size
+            self.memory_usage = so_size
             self.current_processes = list()
 
             Memory.__instance = self
-        
+
+    @property
+    def free_space(self):
+        return self.memory_size - self.memory_usage        
