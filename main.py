@@ -83,18 +83,20 @@ class Scheduler:
         print('lista de tempos', self.list_of_init_times)
         
         while not self.list_of_init_times == [] or not all(x[2] == 'Finished' for x in self.processes.values()):
-            sleep(1)
+            sleep(0.1)
             self.counter += 1
+            print('CONTADOR:', self.counter) 
 
-            self.check_schedule()
+            self.update_schedule()
            
-            print('Contador:', self.counter, 'Tempos de criação restantes:', self.list_of_init_times)
-            
+            if self.list_of_init_times is not []:
+                print('Tempos de criação restantes:', self.list_of_init_times)
+            print('\nFILA:',self.waiting_room.queue)
             if self.counter in self.list_of_init_times:
                 self._create_process(self.counter)
                 self._schedule_process(self.processes[len(self.processes) - 1][0])
             
-            self.generate_memory_report()
+        self.generate_report()
     
     def _create_process(self, init_time):
         id = len(self.processes)
@@ -106,7 +108,7 @@ class Scheduler:
         self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
 
     def _schedule_process(self, element:Process):
-        if self.waiting_room.empty and self.memory.free_space > element.memory_usage:
+        if self.waiting_room.empty and self.memory.get_free_space > element.memory_usage:
             self._allocate_process(element)
         else:
             self.waiting_room.put(element)
@@ -120,7 +122,9 @@ class Scheduler:
             self.processes[element.id][2] = element.status    
             self.processes[element.id].append(element.allocation_time) 
             
-            print('\nprocessos', self.processes)      
+            print('\nPROCESSOS: ')
+            for i in self.processes.values():
+                print(i[0].id, i[2])
             
     def _desallocate_process(self, element:Process):
         self.memory.current_processes.pop(self.memory.current_processes.index(element))
@@ -130,25 +134,34 @@ class Scheduler:
         element.status = "Finished"
         self.processes[element.id][2] = element.status
                 
-        print('\nprocessos', self.processes)
+        print(f'\n PROCESSO {element}\nFOI DESALOCADO em {self.counter}')
 
-    def _pop_from_queue(self):
-        self.waiting_room.get()
-
-    def check_schedule(self):
+    def update_schedule(self):
         for process_info in self.processes.values():
-            process = process_info[0]
-            if self.counter - process.duration == process.allocation_time:
-                print(self.counter, process.duration, process.allocation_time)
-                self._desallocate_process(process)
+            if process_info[2] == 'Running':
+                process = process_info[0]
+    
+                if self.counter - process.duration == process.allocation_time:
+                    print(self.counter, process.duration, process.allocation_time)
+                    self._desallocate_process(process)
+        
+        while (not self.waiting_room.empty() and
+            self.memory.get_free_space > self.waiting_room.queue[0].memory_usage):
+            
+            self._allocate_process(self.waiting_room.get())
 
-    def generate_memory_report(self):
-        print(f"""\nMemória:
+    def generate_report(self):
+        print(f"""\n-------------------------------------------------------------------------
+Memória:
         Total - {self.memory.memory_size}
         Usada - {self.memory.memory_usage}
-        Livre - {self.memory.free_space}
-        Porcentagem de uso - {round((self.memory.memory_usage / self.memory.memory_size)*100, 2)}%\n""")
-
+        Livre - {self.memory.get_free_space}
+        Porcentagem de uso - {round((self.memory.memory_usage / self.memory.memory_size)*100, 2)}%
+        Processos rodando  - {self.memory.current_processes}
+        
+Processos:\n""")
+        for i in self.processes.values():
+            print(i[0])
 
 if __name__ == '__main__':
     scheduler = Scheduler()
