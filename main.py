@@ -69,34 +69,29 @@ class Scheduler:
         
         self.memory = Memory(memory_size, so_size)
         self.processes = dict()
+        self.finished_processes = list()
         self.list_of_init_times = list()
         self.waiting_room = queue.Queue(self.number_of_processes)
         
         self.counter = 0
         
-    def main(self):
+    def main_loop(self):
         for _ in range(self.number_of_processes):
             self.list_of_init_times.append(random.randint(self.range_of_creation[0], self.range_of_creation[1]))
             if _ > 0:
                 self.list_of_init_times[_] +=  self.list_of_init_times[_- 1]
-                
-        print('lista de tempos', self.list_of_init_times)
         
         while not self.list_of_init_times == [] or not all(x[2] == 'Finished' for x in self.processes.values()):
             sleep(0.1)
             self.counter += 1
-            print('CONTADOR:', self.counter) 
+            print('\nCONTADOR DE TEMPO:', self.counter) 
 
             self.update_schedule()
            
-            if self.list_of_init_times is not []:
-                print('Tempos de criação restantes:', self.list_of_init_times)
-            print('\nFILA:',self.waiting_room.queue)
-            if self.counter in self.list_of_init_times:
-                self._create_process(self.counter)
-                self._schedule_process(self.processes[len(self.processes) - 1][0])
+            if self.list_of_init_times != []:
+                print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
             
-        self.generate_report()
+            self.generate_report()
     
     def _create_process(self, init_time):
         id = len(self.processes)
@@ -106,65 +101,103 @@ class Scheduler:
         p = Process(id, init_time, duration, size)
         self.processes[id] = [p, p.memory_usage, p.status, p.init_time, p.duration]
         self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
+        self.waiting_room.put(p)
+        return p
 
-    def _schedule_process(self, element:Process):
-        if self.waiting_room.empty and self.memory.get_free_space > element.memory_usage:
-            self._allocate_process(element)
-        else:
-            self.waiting_room.put(element)
+    def _allocate_process(self, element:Process, cluster):
+        element.allocation_time = self.counter
+        element.waiting_time = self.counter + element.duration
+        element.status = "Running"
+        element.set_inner_memory_address = cluster[0]
+        element.set_upper_memory_address = cluster[0] + element.memory_usage
 
-    def _allocate_process(self, element:Process):
-            self.memory.current_processes.append(element)
-            self.memory.memory_usage += element.memory_usage
-            
-            element.allocation_time = self.counter
-            element.status = "Running"
-            self.processes[element.id][2] = element.status    
-            self.processes[element.id].append(element.allocation_time) 
-            
-            print('\nPROCESSOS: ')
-            for i in self.processes.values():
-                print(i[0].id, i[2])
-            
+        self.memory.current_processes.append(element)
+        self.memory.memory_usage += element.memory_usage
+        
+        self.processes[element.id][2] = element.status    
+        self.processes[element.id].append(element.allocation_time) 
+        
     def _desallocate_process(self, element:Process):
-        self.memory.current_processes.pop(self.memory.current_processes.index(element))
-        self.memory.free(element.memory_usage)
-
-        element.waiting_time = self.counter - element.init_time
+        element.end_time = self.counter
         element.status = "Finished"
+        
+        self.memory.memory_usage -= element.memory_usage
+        
+        self.finished_processes.append(
+            self.memory.current_processes.pop(
+                self.memory.current_processes.index(element)))
         self.processes[element.id][2] = element.status
+        
+    def _first_fit(self):
+        i = 0
+        while not self.waiting_room.empty() and not self.memory.get_free_space < 0:  
+            free_areas = self.memory.get_free_areas
+            
+            for cluster in free_areas:
+                if cluster[2] >= self.waiting_room.queue[0].memory_usage:
+#                    talvez seja útil no futuro:
+#                    print(i)
+#                    print(f'[[[{free_areas}]]]')
+#                    print(f'---------------{cluster, self.waiting_room.queue[0].memory_usage}-----------')
+#                    print(f'----{self.memory.get_unavailable_areas}----')
+                    self._allocate_process(self.waiting_room.get(), cluster)
+                    i = 0
+                    break
+                else:
+                    i += 1
                 
-        print(f'\n PROCESSO {element}\nFOI DESALOCADO em {self.counter}')
-
+            if i == len(free_areas):
+                return
+        
     def update_schedule(self):
         for process_info in self.processes.values():
             if process_info[2] == 'Running':
                 process = process_info[0]
     
                 if self.counter - process.duration == process.allocation_time:
-                    print(self.counter, process.duration, process.allocation_time)
                     self._desallocate_process(process)
+
+        while self.counter in self.list_of_init_times:
+            process = self._create_process(self.counter)
         
-        while (not self.waiting_room.empty() and
-            self.memory.get_free_space > self.waiting_room.queue[0].memory_usage):
-            
-            self._allocate_process(self.waiting_room.get())
+        self._first_fit()
+
+        assert len(self.memory.current_processes) == len(self.memory.get_unavailable_areas) - 1
+
 
     def generate_report(self):
-        print(f"""\n-------------------------------------------------------------------------
-Memória:
+        print(f"""-------------------------------------------------------------------------
+Estado da memória:
         Total - {self.memory.memory_size}
         Usada - {self.memory.memory_usage}
         Livre - {self.memory.get_free_space}
         Porcentagem de uso - {round((self.memory.memory_usage / self.memory.memory_size)*100, 2)}%
-        Processos rodando  - {self.memory.current_processes}
-        
-Processos:\n""")
-        for i in self.processes.values():
-            print(i[0])
+        Áreas ocupadas - {self.memory.get_unavailable_areas}
+        Áreas livres - {self.memory.get_free_areas}
+    --------------------------------------
+Processos alocados:""")
+        for i in self.memory.current_processes:
+            print(f'        {i}')
+
+        print("""    --------------------------------------
+Processos na fila:""")
+        for i in self.waiting_room.queue:
+            print(f'        {i}')
+            
+        print("""    --------------------------------------
+Processos finalizados:""")
+                
+        for i in sorted(self.finished_processes, key=lambda p:p.id):
+            print(f'        ID: {i.id},\n'
+            f'        Tempo de criação: {i.init_time},'
+            f'        Tempo de alocação: {i.allocation_time},'
+            f'        Tempo de conclusão: {i.end_time},'
+            f'        Tempo de espera: {i.waiting_time}')
+        print("""-------------------------------------------------------------------------""")
+
 
 if __name__ == '__main__':
     scheduler = Scheduler()
-    scheduler.main()
+    scheduler.main_loop()
     
     del scheduler
