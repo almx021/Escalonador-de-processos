@@ -89,11 +89,11 @@ class Scheduler:
             self.counter += 1
             print('\nCONTADOR DE TEMPO:', self.counter) 
 
-            self.update_schedule()
-           
             if self.list_of_init_times != []:
                 print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
-            
+
+            self.update_schedule()
+                       
             self.generate_report()
     
     def _create_process(self, init_time):
@@ -107,32 +107,57 @@ class Scheduler:
         self.waiting_room.put(p)
         return p
 
-    def _allocate_process(self, element:Process, cluster):
-        element.allocation_time = self.counter
-        element.waiting_time = self.counter + element.duration
-        element.status = "Running"
-        element.set_inner_memory_address = cluster[0]
-        element.set_upper_memory_address = cluster[0] + element.memory_usage
+    def _allocate_process(self, process:Process, cluster):
+        process.allocation_time = self.counter
+        process.waiting_time = self.counter + process.duration
+        process.status = "Running"
+        process.set_inner_memory_address = cluster[0]
+        process.set_upper_memory_address = cluster[0] + process.memory_usage - 1
 
-        self.memory.current_processes.append(element)
-        self.memory.memory_usage += element.memory_usage
+        self.memory.current_processes.append(process)
+        self.memory.memory_usage += process.memory_usage
         
-    def _desallocate_process(self, element:Process):
-        element.end_time = self.counter
-        element.status = "Finished"
+    def _desallocate_process(self, process:Process):
+        process.end_time = self.counter
+        process.status = "Finished"
         
-        self.memory.memory_usage -= element.memory_usage
+        self.memory.memory_usage -= process.memory_usage
         
         self.finished_processes.append(
             self.memory.current_processes.pop(
-                self.memory.current_processes.index(element)))
+                self.memory.current_processes.index(process)))
+
+    def _fit_process(self):
+        if self.allocation_method == 1:
+            return self._first_fit()
         
+        while not self.waiting_room.empty() and not self.memory.get_free_space < 1:
+            free_clusters = []
+            free_areas = self.memory.get_free_areas
+            
+            for cluster in free_areas:
+                if cluster[2] >= self.waiting_room.queue[0].memory_usage:
+                    free_clusters.append(cluster)
+                
+            if len(free_clusters) == 0:
+                return
+        
+            if self.allocation_method == 2:
+                cluster = sorted(free_clusters, key=lambda c:c[2])[0]                 
+            elif self.allocation_method == 3:
+                cluster = sorted(free_clusters, key=lambda c:c[2])[-1]
+                
+            del free_clusters
+            self._allocate_process(self.waiting_room.get(), cluster)
+
     def _first_fit(self):
         i = 0
+            
         while not self.waiting_room.empty() and not self.memory.get_free_space < 0:  
             free_areas = self.memory.get_free_areas
             
             for cluster in free_areas:
+                print(f'FREE AREAS: {free_areas}')
                 if cluster[2] >= self.waiting_room.queue[0].memory_usage:
 #                    talvez seja útil no futuro:
 #                    print(i)
@@ -147,17 +172,21 @@ class Scheduler:
                 
             if i == len(free_areas):
                 return
-        
+
     def update_schedule(self):
+        _flag = False
         for process in self.processes.values():
             if (process.status == 'Running' and 
                 self.counter - process.duration == process.allocation_time):
-                    self._desallocate_process(process)
+                _flag = True
+                self._desallocate_process(process)
 
         while self.counter in self.list_of_init_times:
+            _flag = True
             process = self._create_process(self.counter)
         
-        self._first_fit()
+        if _flag:
+            self._fit_process()
 
         assert len(self.memory.current_processes) == len(self.memory.get_unavailable_areas) - 1
 

@@ -31,11 +31,12 @@ class Process:
         return [self.get_inner_memory_address, self.get_upper_memory_address]
     
     def __str__(self):
-        return (f'ID: {self.id},'
-    f'        Tempo de criação: {self.init_time}\n')
-#    f'Tempo de alocação: {self.allocation_time},\n' 
-#    f'Tempo de duração: {self.duration},\n'
-#    f'Tempo de espera: {self.waiting_time},\n'
-#    f'Tempo de Finalização: {self.end_time},\n'
-#    f'Uso de memória: {self.memory_usage},\n')
+        return (f'ID {self.id}:'
+    f'        Tempo de criação: {self.init_time},'
+    f'        Uso de memória: {self.memory_usage}\n')
+#    f'        Tempo de alocação: {self.allocation_time},' 
+#    f'        Tempo de duração: {self.duration},'
+#    f'        Tempo de espera: {self.waiting_time},'
+#    f'        Tempo de Finalização: {self.end_time},'
+#    f'        Uso de memória: {self.memory_usage},'
     

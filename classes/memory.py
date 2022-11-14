@@ -22,6 +22,9 @@ class Memory:
     
     @property
     def get_free_areas(self):
+        if self.memory_usage == self.memory_size:
+            return []
+        
         _areas = self.get_unavailable_areas
         if len(_areas) == 1:
             return [(_areas[0][1] + 1, self.memory_size - 1, self.memory_size - _areas[0][1] - 1)]
@@ -33,7 +36,7 @@ class Memory:
                     _free_areas.append(
                         (_areas[i-1][1] + 1, # first free position in this cluster
                          _areas[i][0] - 1, # last free position in this cluster
-                         _areas[i][0] - _areas[i-1][1] # free space in this cluster
+                         _areas[i][0] - _areas[i-1][1] - 1 # free space in this cluster
                         ))
                     
             _free_areas.append(
