@@ -157,7 +157,6 @@ class Scheduler:
             free_areas = self.memory.get_free_areas
             
             for cluster in free_areas:
-                print(f'FREE AREAS: {free_areas}')
                 if cluster[2] >= self.waiting_room.queue[0].memory_usage:
 #                    talvez seja útil no futuro:
 #                    print(i)
