@@ -4,12 +4,12 @@ class Process:
         self.init_time = init_time
         self.duration = duration
         self.memory_usage = memory_usage
+        self.status = 'Waiting'
         self.allocation_time = None
         self.waiting_time = None
-        self.end_time = ...
-        self.status = 'Waiting'
-        self._inner_memory_address = ...
-        self._upper_memory_address = ...
+        self.end_time = None
+        self._inner_memory_address = None
+        self._upper_memory_address = None
        
     @property 
     def get_inner_memory_address(self):

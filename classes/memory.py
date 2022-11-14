@@ -45,19 +45,16 @@ class Memory:
             return _free_areas
     
     @property
-    def get_unavailable_areas(self):
-        if hasattr(self, '_unavailable_areas'):
-            self._unavailable_areas
-            
-        self._unavailable_areas = [[0, self.so_size - 1]]
+    def get_unavailable_areas(self):     
+        _unavailable_areas = [[0, self.so_size - 1]]
         
         self.current_processes = sorted(
             self.current_processes,
             key=lambda p: p.get_inner_memory_address)
         
         for process in self.current_processes:
-            self._unavailable_areas.append([process.get_inner_memory_address,
+            _unavailable_areas.append([process.get_inner_memory_address,
                                                   process.get_upper_memory_address])
             
-        return self._unavailable_areas
+        return _unavailable_areas
         

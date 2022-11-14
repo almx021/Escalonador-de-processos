@@ -81,7 +81,10 @@ class Scheduler:
             if _ > 0:
                 self.list_of_init_times[_] +=  self.list_of_init_times[_- 1]
         
-        while not self.list_of_init_times == [] or not all(x[2] == 'Finished' for x in self.processes.values()):
+        while (not self.list_of_init_times == [] 
+               or not all(
+                   process.status == 'Finished' for process in self.processes.values()
+                   )):
             sleep(0.1)
             self.counter += 1
             print('\nCONTADOR DE TEMPO:', self.counter) 
@@ -99,7 +102,7 @@ class Scheduler:
         size = random.randint(self.range_of_space[0], self.range_of_space[1])
             
         p = Process(id, init_time, duration, size)
-        self.processes[id] = [p, p.memory_usage, p.status, p.init_time, p.duration]
+        self.processes[id] = p
         self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
         self.waiting_room.put(p)
         return p
@@ -114,9 +117,6 @@ class Scheduler:
         self.memory.current_processes.append(element)
         self.memory.memory_usage += element.memory_usage
         
-        self.processes[element.id][2] = element.status    
-        self.processes[element.id].append(element.allocation_time) 
-        
     def _desallocate_process(self, element:Process):
         element.end_time = self.counter
         element.status = "Finished"
@@ -126,7 +126,6 @@ class Scheduler:
         self.finished_processes.append(
             self.memory.current_processes.pop(
                 self.memory.current_processes.index(element)))
-        self.processes[element.id][2] = element.status
         
     def _first_fit(self):
         i = 0
@@ -150,11 +149,9 @@ class Scheduler:
                 return
         
     def update_schedule(self):
-        for process_info in self.processes.values():
-            if process_info[2] == 'Running':
-                process = process_info[0]
-    
-                if self.counter - process.duration == process.allocation_time:
+        for process in self.processes.values():
+            if (process.status == 'Running' and 
+                self.counter - process.duration == process.allocation_time):
                     self._desallocate_process(process)
 
         while self.counter in self.list_of_init_times:
