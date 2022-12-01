@@ -52,9 +52,15 @@ processo deverá ficar na fila aguardando a liberação de um espaço de memóri
 
 import random, queue
 from time import sleep
+from typing import List
+from threading import Thread
 
 from classes.process import Process
 from classes.memory import Memory
+from classes.simulation_data_reporter import SimulationDataReporter
+
+from screens.Window import Window
+from screens.SimulationPanel import SimulationPanel
 
 class Scheduler:
    
@@ -72,6 +78,8 @@ class Scheduler:
         self.finished_processes = list()
         self.list_of_init_times = list()
         self.waiting_room = queue.Queue(self.number_of_processes)
+
+        self.simulation_data_reporter = SimulationDataReporter(self.memory)
         
         self.counter = 0
         
@@ -93,8 +101,10 @@ class Scheduler:
                 print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
 
             self.update_schedule()
-                       
-            self.generate_report()
+            self.simulation_data_reporter.update_data()
+
+            # self.generate_report()
+
     
     def _create_process(self, init_time):
         id = len(self.processes)
@@ -220,9 +230,21 @@ Processos finalizados:""")
             f'        Tempo de espera: {i.waiting_time}')
         print("""-------------------------------------------------------------------------""")
 
+def main():
+    scheduler = Scheduler()
+
+    thread = Thread(target=lambda: scheduler.main_loop())
+
+    window = Window()
+
+    panel = SimulationPanel(window, scheduler.simulation_data_reporter)
+    window.add_frame(panel, "sim-panel")
+    window.raise_frame("sim-panel")
+
+    thread.start()
+
+    window.mainloop()
+
 
 if __name__ == '__main__':
-    scheduler = Scheduler()
-    scheduler.main_loop()
-    
-    del scheduler
+    main()
