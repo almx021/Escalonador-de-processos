@@ -95,10 +95,10 @@ class Scheduler:
                    )):
             sleep(0.1)
             self.counter += 1
-            print('\nCONTADOR DE TEMPO:', self.counter) 
+            print('\nCONTADOR DE TEMPO:', self.counter)
 
-            if self.list_of_init_times != []:
-                print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
+            # if self.list_of_init_times != []:
+            #   print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
 
             self.update_schedule()
             self.simulation_data_reporter.update_data()
@@ -244,7 +244,6 @@ def main():
     thread.start()
 
     window.mainloop()
-
 
 if __name__ == '__main__':
     main()

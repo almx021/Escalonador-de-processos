@@ -4,7 +4,7 @@ class Window(Tk):
     def __init__(self):
         super().__init__()
 
-        self.geometry("800x600")
+        self.geometry("1024x720")
 
         self.current_frame = None
         self.frames = {}
@@ -12,11 +12,9 @@ class Window(Tk):
     
     def add_frame(self, frame, id):
         self.frames[id] = frame
+        self.frames[id].place(relwidth=1, relheight=1)
+        self.frames[id].render()
     
     def raise_frame(self, id):
-        if self.current_frame is not None:
-            self.current_frame.place_forget()
-            self.current_frame = None
-        
         self.current_frame = self.frames[id]
-        self.current_frame.place(relwidth=1, relheight=1)
+        self.current_frame.tkraise()
