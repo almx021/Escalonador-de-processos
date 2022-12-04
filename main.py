@@ -93,7 +93,7 @@ class Scheduler:
                or not all(
                    process.status == 'Finished' for process in self.processes.values()
                    )):
-            sleep(1)
+            sleep(0.1)
             self.counter += 1
             # print('\nCONTADOR DE TEMPO:', self.counter)
 
@@ -101,7 +101,6 @@ class Scheduler:
             #   print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
 
             self.update_schedule()
-            self.simulation_data_reporter.update_data()
 
             # self.generate_report()
 
@@ -115,6 +114,10 @@ class Scheduler:
         self.processes[id] = p
         self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
         self.waiting_room.put(p)
+
+
+        self.simulation_data_reporter.update_data()
+
         return p
 
     def _allocate_process(self, process:Process, cluster):
@@ -126,6 +129,8 @@ class Scheduler:
 
         self.memory.current_processes.append(process)
         self.memory.memory_usage += process.memory_usage
+
+        self.simulation_data_reporter.update_data()
         
     def _desallocate_process(self, process:Process):
         process.end_time = self.counter
@@ -136,6 +141,8 @@ class Scheduler:
         self.finished_processes.append(
             self.memory.current_processes.pop(
                 self.memory.current_processes.index(process)))
+        
+        self.simulation_data_reporter.update_data()
 
     def _fit_process(self):
         if self.allocation_method == 1:
@@ -233,7 +240,7 @@ Processos finalizados:""")
 def main():
     scheduler = Scheduler()
 
-    thread = Thread(target=lambda: scheduler.main_loop())
+    thread = Thread(target=lambda: scheduler.main_loop(), daemon=True)
 
     window = Window()
 

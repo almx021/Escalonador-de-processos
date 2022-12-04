@@ -26,10 +26,11 @@ from numpy.typing import ArrayLike, NDArray
 #             entry.grid(row=0, column=i)
 
 class Table(Frame):
-    def __init__(self, master, headers: List[str] | None, row_height: int):
+    def __init__(self, master, headers: List[str] | None, row_height: int = 20, header_height: int = 20):
         super().__init__(master, relief="sunken", borderwidth=1)
 
         self.headers = headers
+        self.header_height = header_height
 
         self.row_height = row_height
         self.table = np.array([
@@ -51,7 +52,25 @@ class Table(Frame):
 
         self.canvas.bind("<Configure>", func=lambda _: self._update_canvas())
 
+        self._render_static_objects()
         self._update_canvas()
+    
+    def _render_static_objects(self):
+        self.canvas.update_idletasks()
+        width = self.canvas.winfo_width()
+
+        y = self.header_height / 2
+
+        column_width = width / len(self.headers)
+
+        base = np.linspace(0.5, len(self.headers) - 0.5, num=len(self.headers))
+        label_x = column_width * base
+
+        self.canvas.create_line(0, self.header_height, width, self.header_height)
+        for index in range(len(self.headers)):
+            x = label_x[index]
+
+            self.canvas.create_text(x, y, anchor="center", text=self.headers[index], tags=("static"), font=("Arial", 12, "bold"), justify="center")
     
     def insert_row(self, row: List):
         for index, item in enumerate(row):
@@ -125,9 +144,9 @@ class Table(Frame):
         label_x = column_width * base
 
         base = np.linspace(0.5, process_amount - 0.5, num=process_amount)
-        label_y = self.row_height * base
+        label_y = self.row_height * base + self.header_height
 
-        self.canvas.delete("all")
+        self.canvas.delete("dynamic")
         for i in range(process_amount):
             y = label_y[i]
             for j in range(0, column_amount):

@@ -26,15 +26,23 @@ class SimulationPanel(Screen, Observer):
             self.simulation_data_reporter.memory.memory_size,
             self.simulation_data_reporter.memory.so_size
         )
-        self.memory_bar.place(relx=0.05, relwidth=0.15, rely=0.05, relheight=0.8)
+        self.memory_bar.place(relx=0.05, relwidth=0.10, rely=0.05, relheight=0.8)
         self.memory_bar.render()
 
         self.memory_bar_controller = MemoryBarController(self.memory_bar)
 
-        self.current_processes_table = Table(self, headers=["PID", "Usage", "Inner memory"], row_height=20)
-        self.current_processes_table.place(relx=0.23, relwidth=0.35, rely=0.05, relheight=0.8)
+        self.current_processes_table = Table(self, headers=["PID", "Usage", "Inner Memory\nAddress"], header_height=40)
+        self.current_processes_table.place(relx=0.48, relwidth=0.47, rely=0.47, relheight=0.38)
         self.current_processes_table.render()
 
+        self.waiting_processes_table = Table(self, headers=["PID", "Usage", "Created at"], header_height=40)
+        self.waiting_processes_table.place(relx=0.48, relwidth=0.47, rely=0.05, relheight=0.38)
+        self.waiting_processes_table.render()
+
+        self.finished_processes_table = Table(self, headers=["PID", "Usage", "Created at"], header_height=40)
+        self.finished_processes_table.place(relx=0.17, relwidth=0.3, rely=0.05, relheight=0.8)
+        self.finished_processes_table.render()
+
     def alert(self):
-        self.current_processes_table.set(self.simulation_data_reporter.data.copy())
-        self.memory_bar_controller.draw_processes(self.simulation_data_reporter.data.copy())
+        self.current_processes_table.set(self.simulation_data_reporter.running_processes_data.copy())
+        self.memory_bar_controller.draw_processes(self.simulation_data_reporter.running_processes_data.copy())

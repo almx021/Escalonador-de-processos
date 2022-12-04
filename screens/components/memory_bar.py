@@ -35,7 +35,7 @@ class MemoryBar(Frame):
         self.canvas.create_text(
             rectangle_width / 2.0,
             rectangle_height / 2.0,
-            text=f"S.O ({self.so_memory_usage}) um",
+            text="S.O",
             tags=("static"),
             anchor="center"
         )
@@ -63,13 +63,17 @@ class MemoryBarController:
 
         epsilon = height / self.memory_bar.memory_size
 
+        # processes[0] -> Array with the processes PID's
+        # processes[1] -> Array with the processes memory usage
+        # processes[2] -> Array with the processes inner memory address 
+
         processes[1] = processes[1] * epsilon
         processes[2] = processes[2] * epsilon
-        processes[2] = processes[1] + processes[2]
+        processes[1] = processes[2] + processes[1]
 
-        rectangles_data = np.array([processes[1], processes[2]])
+        rectangles_data = np.array([processes[2], processes[1]])
 
-        label_data = np.array([processes[0], (processes[1] + processes[2]) / 2])
+        label_data = np.array([processes[0], (processes[2] + processes[1]) / 2])
         middle = width / 2
 
         _, number_of_processes = rectangles_data.shape
