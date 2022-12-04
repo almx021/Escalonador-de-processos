@@ -29,13 +29,18 @@ class SimulationDataReporter(Observer):
 
         # self._alert_all()
         size = len(self.memory.current_processes)
-        self.data = np.array([np.zeros(size, dtype=np.chararray), np.zeros(size, dtype=np.int32), np.zeros(size, dtype=np.int32)])
+
+        self.data = np.array([
+            np.zeros(size, dtype=np.chararray),
+            np.zeros(size, dtype=np.int32),
+            np.zeros(size, dtype=np.int32)
+        ])
 
         for index, process in enumerate(self.memory.current_processes):
-            self.data[0][index] = np.str0(f"P{process.id} ({process.memory_usage})")
-            self.data[1][index] = np.int32(process.get_inner_memory_address)
-            self.data[2][index] = np.int32(process.memory_usage)
-        
+            self.data[0][index] = np.str0(f"P{process.id}")
+            self.data[1][index] = np.int32(process.memory_usage)
+            self.data[2][index] = np.int32(process.get_inner_memory_address)
+
         self._alert_all()
     
     def subscribe(self, observer: Observer):

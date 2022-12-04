@@ -93,9 +93,9 @@ class Scheduler:
                or not all(
                    process.status == 'Finished' for process in self.processes.values()
                    )):
-            sleep(0.1)
+            sleep(1)
             self.counter += 1
-            print('\nCONTADOR DE TEMPO:', self.counter)
+            # print('\nCONTADOR DE TEMPO:', self.counter)
 
             # if self.list_of_init_times != []:
             #   print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
