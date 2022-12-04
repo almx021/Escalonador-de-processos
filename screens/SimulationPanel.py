@@ -31,18 +31,53 @@ class SimulationPanel(Screen, Observer):
 
         self.memory_bar_controller = MemoryBarController(self.memory_bar)
 
-        self.current_processes_table = Table(self, headers=["PID", "Usage", "Inner Memory\nAddress"], header_height=40)
-        self.current_processes_table.place(relx=0.48, relwidth=0.47, rely=0.47, relheight=0.38)
-        self.current_processes_table.render()
-
-        self.waiting_processes_table = Table(self, headers=["PID", "Usage", "Created at"], header_height=40)
-        self.waiting_processes_table.place(relx=0.48, relwidth=0.47, rely=0.05, relheight=0.38)
+        self.waiting_processes_table = Table(self, headers=["PID", "Usage", "Created"], header_height=40)
+        self.waiting_processes_table.place(relx=0.17, relwidth=0.3, rely=0.05, relheight=0.8)
         self.waiting_processes_table.render()
 
-        self.finished_processes_table = Table(self, headers=["PID", "Usage", "Created at"], header_height=40)
-        self.finished_processes_table.place(relx=0.17, relwidth=0.3, rely=0.05, relheight=0.8)
+        self.current_processes_table = Table(self, headers=["PID", "Usage", "Created", "Allocated"], header_height=40)
+        self.current_processes_table.place(relx=0.48, relwidth=0.47, rely=0.05, relheight=0.38)
+        self.current_processes_table.render()
+
+        self.finished_processes_table = Table(self, headers=["PID", "Usage", "Created", "Allocated", "Finished", "T.E"], header_height=40)
+        self.finished_processes_table.place(relx=0.48, relwidth=0.47, rely=0.47, relheight=0.38)
         self.finished_processes_table.render()
 
-    def alert(self):
-        self.current_processes_table.set(self.simulation_data_reporter.running_processes_data.copy())
-        self.memory_bar_controller.draw_processes(self.simulation_data_reporter.running_processes_data.copy())
+        self.usage_label = Label(self, text="Current memory usage is 0%")
+        self.usage_label.place(relx=0.05, rely=0.9, anchor="sw")
+
+        self.average_te_label = Label(self, text="Average awaiting time is unknown")
+        self.average_te_label.place(relx=0.95, rely=0.9, anchor="se")
+
+    def alert(self, event: str):
+        if event == "process_created":
+            waiting_processes_data = self.simulation_data_reporter.waiting_processes_data
+            self.waiting_processes_table.set(np.array([
+                waiting_processes_data[0].copy(),
+                waiting_processes_data[1].copy(),
+                waiting_processes_data[2].copy()
+            ]))
+
+        if event == "process_allocated":
+            running_processes_data = self.simulation_data_reporter.running_processes_data
+
+            self.current_processes_table.set(np.array([
+                running_processes_data[0].copy(),
+                running_processes_data[1].copy(),
+                running_processes_data[3].copy(),
+                running_processes_data[4].copy()
+            ]))
+            self.memory_bar_controller.draw_processes(np.array([
+                running_processes_data[0].copy(),
+                running_processes_data[1].copy(),
+                running_processes_data[2].copy()
+            ]))
+
+            memory_usage = self.simulation_data_reporter.memory_usage / self.simulation_data_reporter.memory_size * 100
+            self.usage_label.config(text="Current memory usage is {:3.2f}%".format(memory_usage))
+
+        elif event == "process_finished":
+            finished_processes_data = self.simulation_data_reporter.finished_processes_data
+            self.finished_processes_table.set(np.array(finished_processes_data))
+            self.average_te_label.config(text="Average awaiting time is {:3.2f}".format(np.average(finished_processes_data[5].astype(np.float32))))
+            

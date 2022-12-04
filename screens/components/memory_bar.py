@@ -14,9 +14,11 @@ class MemoryBar(Frame):
         self.canvas = Canvas(self, background="#A0A0A0")
         self.canvas.pack(fill="both", expand=True)
 
-        self._draw_static_objects()
+        self.canvas.bind("<Configure>", lambda _: self._render_static_objects())
 
-    def _draw_static_objects(self):
+        self._render_static_objects()
+
+    def _render_static_objects(self):
         self.update_idletasks()
         width = self.canvas.winfo_width()
         height = self.canvas.winfo_height()

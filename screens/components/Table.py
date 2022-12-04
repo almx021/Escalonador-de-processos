@@ -51,12 +51,15 @@ class Table(Frame):
         self.scrollbar.config(command=self.canvas.yview)
 
         self.canvas.bind("<Configure>", func=lambda _: self._update_canvas())
+        self.canvas.bind("<Configure>", func=lambda _: self._render_static_objects())
 
         self._render_static_objects()
         self._update_canvas()
     
     def _render_static_objects(self):
+        self.canvas.delete("static")
         self.canvas.update_idletasks()
+
         width = self.canvas.winfo_width()
 
         y = self.header_height / 2
@@ -153,4 +156,7 @@ class Table(Frame):
                 x = label_x[j]
 
                 self.canvas.create_text(x, y, anchor="center", text=self.table[j][i], tags=("dynamic"))
+        
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
+        self.canvas.update_idletasks()
         

@@ -79,7 +79,7 @@ class Scheduler:
         self.list_of_init_times = list()
         self.waiting_room = queue.Queue(self.number_of_processes)
 
-        self.simulation_data_reporter = SimulationDataReporter(self.memory)
+        self.simulation_data_reporter = SimulationDataReporter(self.waiting_room, self.memory, self.finished_processes)
         
         self.counter = 0
         
@@ -98,7 +98,7 @@ class Scheduler:
             # print('\nCONTADOR DE TEMPO:', self.counter)
 
             # if self.list_of_init_times != []:
-            #   print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
+            #     print('Próximos tempos de criação de processos:', self.list_of_init_times, '\n')
 
             self.update_schedule()
 
@@ -115,9 +115,6 @@ class Scheduler:
         self.list_of_init_times.pop(self.list_of_init_times.index(self.counter))
         self.waiting_room.put(p)
 
-
-        self.simulation_data_reporter.update_data()
-
         return p
 
     def _allocate_process(self, process:Process, cluster):
@@ -129,8 +126,6 @@ class Scheduler:
 
         self.memory.current_processes.append(process)
         self.memory.memory_usage += process.memory_usage
-
-        self.simulation_data_reporter.update_data()
         
     def _desallocate_process(self, process:Process):
         process.end_time = self.counter
@@ -141,13 +136,12 @@ class Scheduler:
         self.finished_processes.append(
             self.memory.current_processes.pop(
                 self.memory.current_processes.index(process)))
-        
-        self.simulation_data_reporter.update_data()
 
     def _fit_process(self):
         if self.allocation_method == 1:
             return self._first_fit()
         
+        process_allocated = False
         while not self.waiting_room.empty() and not self.memory.get_free_space < 1:
             free_clusters = []
             free_areas = self.memory.get_free_areas
@@ -166,10 +160,16 @@ class Scheduler:
                 
             del free_clusters
             self._allocate_process(self.waiting_room.get(), cluster)
+            process_allocated = True
+        
+        if process_allocated:
+            self.simulation_data_reporter.trigger_process_allocated_event()
+        
 
     def _first_fit(self):
         i = 0
-            
+
+        process_allocated = False
         while not self.waiting_room.empty() and not self.memory.get_free_space < 0:  
             free_areas = self.memory.get_free_areas
             
@@ -181,6 +181,7 @@ class Scheduler:
 #                    print(f'---------------{cluster, self.waiting_room.queue[0].memory_usage}-----------')
 #                    print(f'----{self.memory.get_unavailable_areas}----')
                     self._allocate_process(self.waiting_room.get(), cluster)
+                    process_allocated = True
                     i = 0
                     break
                 else:
@@ -188,21 +189,32 @@ class Scheduler:
                 
             if i == len(free_areas):
                 return
+        
+        if process_allocated:
+            self.simulation_data_reporter.trigger_process_allocated_event()
 
     def update_schedule(self):
-        _flag = False
+        process_created = False
+        process_finished = False
+
         for process in self.processes.values():
             if (process.status == 'Running' and 
                 self.counter - process.duration == process.allocation_time):
-                _flag = True
                 self._desallocate_process(process)
+                process_finished = True
 
         while self.counter in self.list_of_init_times:
-            _flag = True
             process = self._create_process(self.counter)
-        
-        if _flag:
+            process_created = True
+
+        if process_created or process_finished:
             self._fit_process()
+    
+        if process_created:
+            self.simulation_data_reporter.trigger_process_created_event()
+        
+        if process_finished:
+            self.simulation_data_reporter.trigger_process_finished_event()
 
         assert len(self.memory.current_processes) == len(self.memory.get_unavailable_areas) - 1
 
