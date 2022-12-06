@@ -5,6 +5,7 @@ import numpy as np
 from typing import List, Tuple
 from numpy.typing import ArrayLike, NDArray
 
+
 # class TableRow(Frame):
 #     def __init__(self, master, column_amount: int, values: List[str]) -> None:
 #         super().__init__(self, master)
@@ -24,6 +25,11 @@ from numpy.typing import ArrayLike, NDArray
         
 #         for i, entry in enumerate(self.entries):
 #             entry.grid(row=0, column=i)
+
+blue = "#035AA4"
+red = "#EE3124"
+white = "#CDCCCC"
+yellow = "#BA8843"
 
 class Table(Frame):
     def __init__(self, master, headers: List[str] | None, row_height: int = 20, header_height: int = 20):
@@ -53,6 +59,8 @@ class Table(Frame):
         self.canvas.bind("<Configure>", func=lambda _: self._update_canvas())
         self.canvas.bind("<Configure>", func=lambda _: self._render_static_objects())
 
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
         self._render_static_objects()
         self._update_canvas()
     
@@ -69,11 +77,11 @@ class Table(Frame):
         base = np.linspace(0.5, len(self.headers) - 0.5, num=len(self.headers))
         label_x = column_width * base
 
-        self.canvas.create_line(0, self.header_height, width, self.header_height)
+        self.canvas.create_rectangle(0, 0, width, self.header_height, fill=yellow)
         for index in range(len(self.headers)):
             x = label_x[index]
 
-            self.canvas.create_text(x, y, anchor="center", text=self.headers[index], tags=("static"), font=("Arial", 12, "bold"), justify="center")
+            self.canvas.create_text(x, y, anchor="center", text=self.headers[index], tags=("static"), fill="#FFFFFF", font=("Arial", 12, "bold"), justify="center")
     
     def insert_row(self, row: List):
         for index, item in enumerate(row):
@@ -149,14 +157,19 @@ class Table(Frame):
         base = np.linspace(0.5, process_amount - 0.5, num=process_amount)
         label_y = self.row_height * base + self.header_height
 
+        rectangle_y0 = np.linspace(self.header_height, self.header_height + process_amount * self.row_height, num=process_amount + 1)
+        rectangle_y1 = rectangle_y0 + self.row_height
+
+        colors = ["#035AA4", "#EE3124"]
+
         self.canvas.delete("dynamic")
         for i in range(process_amount):
             y = label_y[i]
+            self.canvas.create_rectangle(0, rectangle_y0[i], width, rectangle_y1[i], fill=colors[i % 2], tags=("dynamic"))
             for j in range(0, column_amount):
                 x = label_x[j]
+                self.canvas.create_text(x, y, anchor="center", text=self.table[j][i], fill="#FFFFFF", tags=("dynamic"))
 
-                self.canvas.create_text(x, y, anchor="center", text=self.table[j][i], tags=("dynamic"))
-        
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.canvas.update_idletasks()
         

@@ -4,6 +4,11 @@ from typing import List
 from numpy.typing import ArrayLike
 import numpy as np
 
+blue = "#035AA4"
+red = "#EE3124"
+white = "#CDCCCC"
+yellow = "#BA8843"
+
 class MemoryBar(Frame):
     def __init__(self, master, memory_size: int, so_memory_usage: int):
         super().__init__(master)
@@ -11,7 +16,7 @@ class MemoryBar(Frame):
         self.so_memory_usage = so_memory_usage
         
     def render(self):
-        self.canvas = Canvas(self, background="#A0A0A0")
+        self.canvas = Canvas(self, background=white)
         self.canvas.pack(fill="both", expand=True)
 
         self.canvas.bind("<Configure>", lambda _: self._render_static_objects())
@@ -31,15 +36,16 @@ class MemoryBar(Frame):
             0,
             rectangle_width,
             rectangle_height,
-            fill="#FFFFFF",
+            fill=yellow,
             tags=("static")
         )
         self.canvas.create_text(
             rectangle_width / 2.0,
             rectangle_height / 2.0,
             text="S.O",
+            fill="#FFFFFF",
             tags=("static"),
-            anchor="center"
+            anchor="center",
         )
 
 class MemoryBarController:
@@ -78,10 +84,13 @@ class MemoryBarController:
         label_data = np.array([processes[0], (processes[2] + processes[1]) / 2])
         middle = width / 2
 
-        _, number_of_processes = rectangles_data.shape
+        colors = [blue, red]
 
+        _, number_of_processes = rectangles_data.shape
 
         self.memory_bar.canvas.delete("dynamic")
         for i in range(number_of_processes):
-            self.memory_bar.canvas.create_rectangle(0, rectangles_data[0][i], width, rectangles_data[1][i], fill="#FFFFFF", tags=("dynamic"))
-            self.memory_bar.canvas.create_text(middle, label_data[1][i], text=label_data[0][i], tags=("dynamic"), anchor="center")
+            self.memory_bar.canvas.create_rectangle(0, rectangles_data[0][i], width, rectangles_data[1][i], fill=colors[i % 2], tags=("dynamic"))
+            self.memory_bar.canvas.create_text(middle, label_data[1][i], text=label_data[0][i], fill="#FFFFFF", tags=("dynamic"), anchor="center")
+
+        self.memory_bar.canvas.update_idletasks()

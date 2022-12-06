@@ -77,7 +77,11 @@ class SimulationPanel(Screen, Observer):
             self.usage_label.config(text="Current memory usage is {:3.2f}%".format(memory_usage))
 
         elif event == "process_finished":
-            finished_processes_data = self.simulation_data_reporter.finished_processes_data
+            finished_processes_data = self.simulation_data_reporter.finished_processes_data.copy()
+
+            # finished_processes_data = np.array([np.flip(array) for array in finished_processes_data])
+            finished_processes_data = np.flip(finished_processes_data, axis=1)
+
             self.finished_processes_table.set(np.array(finished_processes_data))
             self.average_te_label.config(text="Average awaiting time is {:3.2f}".format(np.average(finished_processes_data[5].astype(np.float32))))
             
