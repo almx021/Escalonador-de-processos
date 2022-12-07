@@ -93,7 +93,7 @@ class Scheduler:
                or not all(
                    process.status == 'Finished' for process in self.processes.values()
                    )):
-            sleep(0.1)
+            sleep(1)
             self.counter += 1
             # print('\nCONTADOR DE TEMPO:', self.counter)
 
@@ -249,6 +249,10 @@ Processos finalizados:""")
             f'        Tempo de espera: {i.waiting_time}')
         print("""-------------------------------------------------------------------------""")
 
+def refresh_interface(scheduler, window):
+    scheduler.simulation_data_reporter.recalculate_all()
+    window.after(1000, lambda: refresh_interface(scheduler, window))
+
 def main():
     scheduler = Scheduler()
 
@@ -260,6 +264,7 @@ def main():
     window.add_frame(panel, "sim-panel")
     window.raise_frame("sim-panel")
 
+    window.after(1000, lambda: refresh_interface(scheduler, window))
     thread.start()
 
     window.mainloop()

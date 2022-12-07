@@ -75,6 +75,9 @@ class MemoryBarController:
         # processes[1] -> Array with the processes memory usage
         # processes[2] -> Array with the processes inner memory address 
 
+        for i in range(len(processes[0])):
+            processes[0][i] = np.str0(f"{str(processes[0][i])} ({int(processes[1][i])} MU)")
+
         processes[1] = processes[1] * epsilon
         processes[2] = processes[2] * epsilon
         processes[1] = processes[2] + processes[1]

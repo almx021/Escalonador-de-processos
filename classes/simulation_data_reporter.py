@@ -51,6 +51,12 @@ class SimulationDataReporter(Observer):
         self._refresh_running_processes()
         self._refresh_finished_processes()
         self._alert_event("process_finished")
+
+    def recalculate_all(self):
+        self._refresh_waiting_processes()
+        self._refresh_running_processes()
+        self._refresh_finished_processes()
+        self._alert_event("all")
     
     def _refresh_waiting_processes(self):
         size = len(self.waiting_processes_queue.queue)
@@ -74,7 +80,8 @@ class SimulationDataReporter(Observer):
             np.zeros(size, dtype=np.int32),
             np.zeros(size, dtype=np.int32),
             np.zeros(size, dtype=np.int32),
-            np.zeros(size, dtype=np.int32)
+            np.zeros(size, dtype=np.int32),
+            np.zeros(size, dtype=np.int32),
         ])
 
         for index, process in enumerate(self.memory.current_processes):
@@ -83,7 +90,8 @@ class SimulationDataReporter(Observer):
             self.running_processes_data[2][index] = np.int32(process.get_inner_memory_address)
             self.running_processes_data[3][index] = np.int32(process.init_time)
             self.running_processes_data[4][index] = np.int32(process.allocation_time)
-        
+            self.running_processes_data[5][index] = np.int32(process.duration)
+
     def _refresh_finished_processes(self):
         size = len(self.finished_processes_list)
 
