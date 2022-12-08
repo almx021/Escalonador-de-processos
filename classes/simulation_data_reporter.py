@@ -112,6 +112,9 @@ class SimulationDataReporter(Observer):
             self.finished_processes_data[4][index] = np.int32(process.end_time)
         
         self.finished_processes_data[5] = self.finished_processes_data[4] - self.finished_processes_data[2]
+    
+    def get_free_areas(self):
+        return np.array(self.memory.get_free_areas)
 
     @property
     def memory_usage(self):

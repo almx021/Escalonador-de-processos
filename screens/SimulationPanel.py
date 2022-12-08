@@ -103,11 +103,14 @@ class SimulationPanel(Screen, Observer):
                 running_processes_data[5].copy(),
                 running_processes_data[4].copy()
             ]))
-            self.memory_bar_controller.draw_processes(np.array([
-                running_processes_data[0].copy(),
-                running_processes_data[1].copy(),
-                running_processes_data[2].copy()
-            ]))
+            self.memory_bar_controller.draw_processes(
+                np.array([
+                    running_processes_data[0].copy(),
+                    running_processes_data[1].copy(),
+                    running_processes_data[2].copy()
+                ]),
+                self.simulation_data_reporter.get_free_areas()
+            )
 
             memory_usage = self.simulation_data_reporter.memory_usage / self.simulation_data_reporter.memory_size * 100
             self.usage_label.config(text="Current memory usage is {:3.2f}%".format(memory_usage))
